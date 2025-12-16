@@ -23,30 +23,35 @@ THP must be enabled for USM allocation to work properly:
 # Check current status
 cat /sys/kernel/mm/transparent_hugepage/enabled
 
-# Enable (recommended)
+# Enable
 sudo sh -c 'echo madvise > /sys/kernel/mm/transparent_hugepage/enabled'
 
-# Disable (if needed, not recommended)
+# Disable (after tests, if needed)
 sudo sh -c 'echo never > /sys/kernel/mm/transparent_hugepage/enabled'
 ```
 
 ## Build Instructions
 
-All tests require custom builds of PyTorch with USM storage support. Below is an example for NVIDIA Jetson AGX Orin.
+All tests require custom builds of PyTorch with USM storage support. 
 
-### Build Custom PyTorch
+### Build Custom PyTorch on NVIDIA Jetson
+
+You need to install the [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) including CUDA 12.x.
+
+Then, follow these steps to build PyTorch:
 
 ```bash
 # Clone the custom PyTorch repo
 git clone https://github.com/nagic0/pytorch.git
 cd pytorch
-
-# Check out the USM storage branch
 git switch dev/usm_storage
+git submodule update --init --recursive --progress -j 8
 
 # Create a conda environment
 conda create -n usm-test python=3.11 -y
 conda activate usm-test
+
+pip install -r ./requirements-build.txt
 
 # Build configuration
 export BUILD_TEST=0
@@ -63,8 +68,49 @@ export USE_CUFILE=0
 export TORCH_CUDA_ARCH_LIST="8.7"  # Set according to your GPU
 export REL_WITH_DEB_INFO=1
 export USE_PRIORITIZED_TEXT_FOR_LD=1
-export MAX_JOBS=5  # Adjust based on your system memory
+export USE_FLASH_ATTENTION=0
+export USE_MEM_EFF_ATTENTION=0
+# export MAX_JOBS=5  # Adjust based on your system memory
 
 # Build and install
+python setup.py install
+```
+
+### Build Custom PyTorch on Intel Arrow Lake
+
+You need to install the [Intel oneAPI Base Toolkits](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html).
+
+Then, follow these steps to build PyTorch:
+
+```bash
+git clone https://github.com/nagic0/pytorch.git
+cd pytorch
+git switch dev/usm_storage_intel
+git submodule update --init --recursive --progress -j 8
+
+# Create a conda environment
+conda create -n usm-test python=3.11 -y
+conda activate usm-test
+
+pip install -r ./requirements-build.txt
+
+source /opt/intel/oneapi/setvars.sh
+
+export BUILD_TEST=0
+export INSTALL_TEST=0
+export PYTORCH_QNNPACK_BUILD_TESTS=0
+export PTHREADPOOL_BUILD_TESTS=0
+export XNNPACK_BUILD_TESTS=0
+export DNNL_BUILD_TESTS=0
+export USE_CUDA=0
+export USE_ROCM=0
+export USE_XCCL=0
+export USE_DISTRIBUTED=0
+export USE_QNNPACK=0
+export USE_PYTORCH_QNNPACK=0
+export USE_XNNPACK=0
+export REL_WITH_DEB_INFO=1
+export TORCH_XPU_ARCH_LIST="arl-h"
+
 python setup.py install
 ```

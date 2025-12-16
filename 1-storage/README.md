@@ -17,13 +17,7 @@ The tests are intended for systems with custom PyTorch builds that expose `Untyp
 
 - Python 3.8+ with `numpy` and `torch` installed.
 - A PyTorch build that supports USM storage APIs (custom builds).
-- CUDA-capable USM device (`device=cuda:0` by default), like NVIDIA Jetson.
-
-Install runtime dependencies:
-
-```bash
-pip install numpy
-```
+- CUDA-capable USM device (`device=cuda` by default), like NVIDIA Jetson.
 
 ## Running Correctness Tests
 
