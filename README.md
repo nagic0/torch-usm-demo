@@ -17,7 +17,7 @@ Both test suites compare standard copy-based loading against USM-backed storage 
 
 ### Enable Transparent Hugepage (THP)
 
-THP must be enabled for USM allocation to work properly:
+THP must be enabled for USM allocation to work performantly. You can check and enable it using the following commands:
 
 ```bash
 # Check current status
