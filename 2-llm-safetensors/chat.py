@@ -16,17 +16,29 @@ from transformers import (
 from transformers.modeling_utils import set_usm_device
 
 
-def flush():
-    torch.cuda.empty_cache()
+def flush(device):
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    elif device.type == "xpu":
+        torch.xpu.empty_cache()
+    else:
+        pass
     os.system("sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null")
 
+def device_sync(device):
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    elif device.type == "xpu":
+        torch.xpu.synchronize()
+    else:
+        pass
 
 def load_model(path: str, use_usm: bool, device_map="cuda"):
-    flush()
+    flush(torch.device(device_map))
 
     t0 = time.time()
     tokenizer = AutoTokenizer.from_pretrained(path, use_fast=True)
-    loader_context = set_usm_device("cuda") if use_usm else nullcontext()
+    loader_context = set_usm_device(device_map) if use_usm else nullcontext()
     with loader_context:
         model = AutoModelForCausalLM.from_pretrained(
             path,
@@ -48,8 +60,7 @@ def load_model(path: str, use_usm: bool, device_map="cuda"):
             tokenizer.pad_token_id = eos_id
     if getattr(model.config, "pad_token_id", None) is None and eos_id is not None:
         model.config.pad_token_id = eos_id
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
+    device_sync(torch.device(device_map))
     t1 = time.time()
 
     return tokenizer, model, t1 - t0
@@ -153,12 +164,12 @@ def main():
     parser = argparse.ArgumentParser(description="Interactive chat with streaming response (optional USM)")
     parser.add_argument("-m", "--model", required=True, help="Path to pretrained model folder")
     parser.add_argument("--usm", action="store_true", help="Use USM (set USM_DEVICE=cuda)")
-    parser.add_argument("--device_map", default="cuda", help="Device map to pass to from_pretrained")
+    parser.add_argument("--device", "-d", type=str, required=True, help="Device to use (e.g., cuda, xpu)")
     args = parser.parse_args()
 
     try:
         print(f"Loading model: {args.model} (USM={args.usm})")
-        tokenizer, model, load_time = load_model(args.model, use_usm=args.usm, device_map=args.device_map)
+        tokenizer, model, load_time = load_model(args.model, use_usm=args.usm, device_map=args.device)
         print(f"Loaded model in {load_time:.2f} seconds.\n")
 
         # simple conversation history

@@ -34,7 +34,7 @@ sudo sh -c 'echo never > /sys/kernel/mm/transparent_hugepage/enabled'
 
 All tests require custom builds of PyTorch with USM storage support. 
 
-### Build Custom PyTorch on NVIDIA Jetson
+### NVIDIA Jetson (Jetson AGX Orin)
 
 You need to install the [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) including CUDA 12.x.
 
@@ -68,19 +68,19 @@ export USE_CUFILE=0
 export TORCH_CUDA_ARCH_LIST="8.7"  # Set according to your GPU
 export REL_WITH_DEB_INFO=1
 export USE_PRIORITIZED_TEXT_FOR_LD=1
-export USE_FLASH_ATTENTION=0
+export USE_FLASH_ATTENTION=0  # Disable because of too slow compile on Jetson
 export USE_MEM_EFF_ATTENTION=0
-# export MAX_JOBS=5  # Adjust based on your system memory
+# export MAX_JOBS=5  # Adjust based on your system memory if compile with flash attention
 
 # Build and install
 python setup.py install
 ```
 
-### Build Custom PyTorch on Intel Arrow Lake
+### Intel iGPU Platforms (Arrow Lake)
 
 You need to install the [Intel oneAPI Base Toolkits](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html).
 
-Then, follow these steps to build PyTorch:
+Then, follow these steps to build PyTorch with special [torch-xpu-ops](https://github.com/nagic0/torch-xpu-ops/tree/dev/torch_usm_l0).
 
 ```bash
 git clone https://github.com/nagic0/pytorch.git

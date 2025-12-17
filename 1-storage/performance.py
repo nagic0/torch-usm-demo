@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 import re
 import sys
+import argparse
 
 ROOT = Path(__file__).parent.absolute()
 WORKER_SCRIPT = ROOT / "performance_worker.py"
@@ -17,7 +18,7 @@ def create_dummy_file(filename, size_mb):
     del arr
     print("Done.")
 
-def run_single_test(filename, method, loop, warmup):
+def run_single_test(filename, method, loop, warmup, device):
     latencies = []
 
     total_runs = warmup + loop
@@ -31,7 +32,7 @@ def run_single_test(filename, method, loop, warmup):
             sys.executable, str(WORKER_SCRIPT),
             "--file", str(filename),
             "--method", method,
-            "--device", "cuda:0"
+            "--device", device
         ]
 
         try:
@@ -58,7 +59,23 @@ def run_single_test(filename, method, loop, warmup):
     return sum(latencies) / len(latencies)
 
 def main():
-    sizes = [1, 100, 1000, 5000]
+    parser = argparse.ArgumentParser(description='Performance test for USM vs Copy')
+    parser.add_argument('--device', "-d", type=str, required=True,
+                        help='Device to use (e.g., cuda, xpu)')
+    args = parser.parse_args()
+
+    # check device availability
+    if args.device == 'cuda' and not torch.cuda.is_available():
+        print("CUDA device is not available. Exiting.")
+        exit(1)
+    elif args.device == 'xpu' and not torch.xpu.is_available():
+        print("XPU device is not available. Exiting.")
+        exit(1)
+    
+    print(f"Using device: {args.device}")
+    print()
+    
+    sizes = [1, 100, 1000, 4000]
     warmup = 2
     loop = 3
 
@@ -77,8 +94,8 @@ def main():
         
         try:
             create_dummy_file(filename, size)
-            copy_avg = run_single_test(filename, "copy", loop, warmup)
-            usm_avg = run_single_test(filename, "usm", loop, warmup)
+            copy_avg = run_single_test(filename, "copy", loop, warmup, args.device)
+            usm_avg = run_single_test(filename, "usm", loop, warmup, args.device)
 
             results[size] = (copy_avg, usm_avg)
 

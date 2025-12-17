@@ -16,7 +16,7 @@ The tests are intended for systems with custom PyTorch, Safetensors, and Transfo
 
 ## Prerequisites
 
-- Python 3.8+ with `numpy`, `torch`, and `transformers` installed.
+- Python 3.8+ with `numpy` and `accelerate` installed.
 - Custom PyTorch build with USM storage support (see [main README](../README.md)).
 - Custom Safetensors build with USM storage support.
 - Custom Transformers build with USM support.
@@ -52,10 +52,10 @@ git switch dev/torch_usm
 pip install -e .
 ```
 
-Install runtime dependencies:
+Install prequisites:
 
 ```bash
-pip install numpy
+pip install accelerate
 ```
 
 ## Running Correctness Tests
@@ -63,13 +63,20 @@ pip install numpy
 `correctness.py` compares the model loaded via the standard copy path and the USM-backed path and verifies equivalence. Usage:
 
 ```bash
-python correctness.py --model <model-path-or-id>
+python correctness.py --device cuda --model <model-path-or-id>
 ```
 
-Example output:
+Notes:
+
+- Supports both local model paths (e.g., `./Qwen3-8B`) and Hugging Face model IDs (e.g., `meta-llama/Llama-3.2-3B-Instruct`).
+- The script treats exact binary equality (max diff == 0) as PASS.
+
+### NVIDIA Jetson Example
+
+Example on NVIDIA Jetson AGX Orin (L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
 
 ```
-> python ./2-llm-safetensors/correctness.py --model meta-llama/Llama-3.2-3B-Instruct
+> python correctness.py --device cuda --model meta-llama/Llama-3.2-3B-Instruct
 
 ...
 
@@ -79,10 +86,24 @@ Passed (max_diff==0): 254
 Overall PASS: True
 ```
 
-Notes:
+### Intel iGPU Example
 
-- Supports both local model paths (e.g., `./Qwen3-8B`) and Hugging Face model IDs (e.g., `meta-llama/Llama-3.2-3B-Instruct`).
-- The script treats exact binary equality (max diff == 0) as PASS.
+**Important:**
+
+- On Intel iGPU platforms before Xe2, there's a max size limit, around 4GB, for a single GPU buffer (See [this issue](https://github.com/intel/compute-runtime/issues/627)). Therefore, for larger models (2B+), consider using the `intel_resize.py` script to **resize the file sizes** of the model weights before running the tests.
+
+Example on Intel Arrow Lake (Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
+
+```
+> python correctness.py --device xpu --model ./Llama-3.1-8B-Instruct-Resize
+
+...
+
+Summary:
+Total compared tensors: 291
+Passed (max_diff==0): 291
+Overall PASS: True
+```
 
 ## Running Performance Benchmark
 
@@ -91,13 +112,23 @@ Notes:
 Run the benchmark:
 
 ```bash
-python performance.py --model <model-path-or-id>
+sudo ls
+python performance.py --device <device> --model <model-path-or-id>
 ```
 
-Example output:
+Notes:
+
+- The script spawns worker subprocesses which print timing results — `performance.py` parses that to compute average latencies.
+- For accurate measurements, inside the worker, we drop filesystem caches before each timed run.
+- Supports both local model paths and Hugging Face model IDs.
+
+### NVIDIA Jetson Example
+
+Example on NVIDIA Jetson AGX Orin (L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
 
 ```
-> python ./2-llm-safetensors/performance.py --model Qwen/Qwen3-8B
+> sudo ls
+> python performance.py --device cuda --model Qwen/Qwen3-8B
 
 Benchmarking model: Qwen/Qwen3-8B
   Running COPY [Warmup] 1/5... 19.2688 s
@@ -111,38 +142,62 @@ Benchmarking model: Qwen/Qwen3-8B
   Running USM [Timing] 4/5... 10.8913 s
   Running USM [Timing] 5/5... 10.8857 s
 
-Summary for model: ./Qwen3-8B
+Summary for model: Qwen/Qwen3-8B
 Copy average: 19.099295 s
 USM average:  10.934755 s
 Time Reduce: 42.75 %
 ```
 
-Important:
+### Intel iGPU Example
 
-- The script spawns worker subprocesses which print timing results — `performance.py` parses that to compute average latencies.
-- For accurate measurements, inside the worker, we drop filesystem caches before each timed run.
-- Supports both local model paths and Hugging Face model IDs.
+Example on Intel Arrow Lake (Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
+
+```
+> source /opt/intel/oneapi/setvars.sh
+
+# Resize the model and save to local path first
+> python intel_resize.py --load google/gemma-3-27b-it --save ./gemma-3-27b-it-Resize 
+Loading model from google/gemma-3-27b-it...
+Loading checkpoint shards: 100%|███████████████| 12/12 [00:00<00:00, 124.18it/s]
+Resized model saved to ./gemma-3-27b-it-Resize.
+
+> sudo ls
+> python performance.py --device xpu --model ./gemma-3-27b-it-Resize
+
+Benchmarking model: ./gemma-3-27b-it-Resize
+  Running COPY [Warmup] 1/5... 41.7727 s
+  Running COPY [Warmup] 2/5... 41.5967 s
+  Running COPY [Timing] 3/5... 38.8560 s
+  Running COPY [Timing] 4/5... 38.8384 s
+  Running COPY [Timing] 5/5... 37.5333 s
+  Running USM [Warmup] 1/5... 12.3734 s
+  Running USM [Warmup] 2/5... 12.8650 s
+  Running USM [Timing] 3/5... 10.9618 s
+  Running USM [Timing] 4/5... 11.2411 s
+  Running USM [Timing] 5/5... 11.3855 s
+
+Summary for model: ./gemma-3-27b-it-Resize
+Copy average: 38.409206 s
+USM average:  11.196101 s
+Time Reduce: 70.85 %
+```
 
 ## Interactive Chat Demo
 
 `chat.py` provides an interactive chat interface to test model inference with and without USM loading.
 
-Run without USM:
+Run the chat demo:
 
 ```bash
-python chat.py --model Qwen/Qwen3-8B
+python chat.py --device <device> --model <model-path-or-id> [--usm]
 ```
 
-Run with USM:
+### NVIDIA Jetson Example
 
-```bash
-python chat.py --model Qwen/Qwen3-8B --usm
-```
-
-Example output (without USM):
+Example on NVIDIA Jetson AGX Orin (L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
 
 ```
-> python ./2-llm-safetensors/chat.py --model Qwen/Qwen3-8B
+> python chat.py --device cuda --model Qwen/Qwen3-8B
 
 Loading model: Qwen/Qwen3-8B (USM=False)
 Loading checkpoint shards: 100%|███████████████| 5/5 [00:15<00:00,  3.02s/it]
@@ -153,12 +208,8 @@ Assistant:  I am Qwen, a large-scale language model developed by Alibaba Cloud. 
 
 User: exit
 Exiting...
-```
 
-Example output (with USM):
-
-```
-> python ./2-llm-safetensors/chat.py --model Qwen/Qwen3-8B --usm
+> python chat.py --device cuda --model Qwen/Qwen3-8B --usm
 
 Loading model: Qwen/Qwen3-8B (USM=True)
 Loading checkpoint shards: 100%|███████████████| 5/5 [00:10<00:00,  2.18s/it]
@@ -170,3 +221,9 @@ Assistant:  I am Qwen, a large-scale language model developed by Alibaba Cloud. 
 User: exit
 Exiting...
 ```
+
+### Intel iGPU Example
+
+Due to the [AOT compilation issue or incorrect use by me](https://github.com/intel/torch-xpu-ops/issues/2587) on Intel iGPU platforms, the chat demo may experience significant delays during the first inference call. Subsequent calls should be faster.
+
+*To be continued...*

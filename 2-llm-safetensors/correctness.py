@@ -7,8 +7,8 @@ from transformers import AutoModelForCausalLM
 from transformers.modeling_utils import set_usm_device
 
 
-def load_model(path: str, use_usm: bool, device_map="cuda"):
-    loader_context = set_usm_device("cuda") if use_usm else nullcontext()
+def load_model(path: str, use_usm: bool, device_map):
+    loader_context = set_usm_device(device_map) if use_usm else nullcontext()
     
     with loader_context:
         model = AutoModelForCausalLM.from_pretrained(
@@ -57,19 +57,19 @@ def compare_models(model_a, model_b):
 def main():
     parser = argparse.ArgumentParser(description="Compare model parameters between copy and USM/shared loads")
     parser.add_argument("--model", "-m", required=True, help="Path to pretrained model folder")
-    parser.add_argument("--device_map", default="cuda")
+    parser.add_argument("--device", "-d", type=str, required=True, help="Device to use (e.g., cuda, xpu)")
 
     args = parser.parse_args()
 
     print(f"Loading copy-based model from: {args.model}")
     # Use the model's default dtype/configuration by not passing `dtype`
-    model_copy = load_model(args.model, use_usm=False, device_map=args.device_map)
+    model_copy = load_model(args.model, use_usm=False, device_map=args.device)
 
     # free any temporary CPU memory before the second load
     gc.collect()
 
-    print(f"Loading USM/shared model from: {args.model} (USM_DEVICE=cuda)")
-    model_shared = load_model(args.model, use_usm=True, device_map=args.device_map)
+    print(f"Loading USM/shared model from: {args.model} (USM_DEVICE={args.device})")
+    model_shared = load_model(args.model, use_usm=True, device_map=args.device)
 
     print("\nComparing parameters:\n")
     results = compare_models(model_copy, model_shared)

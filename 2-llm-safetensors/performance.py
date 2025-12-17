@@ -23,7 +23,7 @@ def run_single_test(model_path, method, loop, warmup, device_map):
             sys.executable, str(WORKER_SCRIPT),
             "--model", str(model_path),
             "--method", method,
-            "--device_map", device_map,
+            "--device", device_map,
         ]
 
         try:
@@ -53,7 +53,7 @@ def main():
     parser.add_argument("--model", "-m", required=True, help="Path to pretrained model folder")
     parser.add_argument("--warmup", type=int, default=2)
     parser.add_argument("--loop", type=int, default=3)
-    parser.add_argument("--device_map", default="cuda")
+    parser.add_argument("--device", "-d", type=str, required=True, help="Device to use (e.g., cuda, xpu)")
     args = parser.parse_args()
 
     if not WORKER_SCRIPT.exists():
@@ -62,8 +62,8 @@ def main():
 
     print(f"Benchmarking model: {args.model}")
 
-    copy_avg = run_single_test(args.model, "copy", args.loop, args.warmup, args.device_map)
-    usm_avg = run_single_test(args.model, "usm", args.loop, args.warmup, args.device_map)
+    copy_avg = run_single_test(args.model, "copy", args.loop, args.warmup, args.device)
+    usm_avg = run_single_test(args.model, "usm", args.loop, args.warmup, args.device)
 
     print(f"\nSummary for model: {args.model}")
     print(f"Copy average: {copy_avg:.6f} s")
