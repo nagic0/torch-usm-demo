@@ -27,7 +27,7 @@ The tests are intended for systems with custom PyTorch, Safetensors, and Transfo
 
 Remember to install `Rust` and `cargo` beforehand with `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`.
 
-**Safetensors build:**
+**1. Safetensors build:**
 
 ```bash
 cd <your_workspace>
@@ -40,7 +40,7 @@ cd bindings/python
 pip install -e .
 ```
 
-**Transformers build:**
+**2. Transformers build:**
 
 ```bash
 cd <your_workspace>
@@ -52,7 +52,7 @@ git switch dev/torch_usm
 pip install -e .
 ```
 
-Install prequisites:
+**3. Other dependencies:**
 
 ```bash
 pip install accelerate
@@ -77,6 +77,25 @@ Example on NVIDIA Jetson AGX Orin (L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
 
 ```
 > python correctness.py --device cuda --model meta-llama/Llama-3.2-3B-Instruct
+
+...
+
+Summary:
+Total compared tensors: 254
+Passed (max_diff==0): 254
+Overall PASS: True
+```
+
+### AMD APU Example
+
+**Important:**
+
+Due to ROCm's memory allocation behavior on AMD APU platforms, HIP only recognizes VRAM allocated via the BIOS and does not detect available host memory. To fully utilize system memory for loading large models, please refer to [segurac/force-host-alloction-APU](https://github.com/segurac/force-host-alloction-APU). 
+
+Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
+
+```
+> LD_PRELOAD=./libforcegttalloc.so python correctness.py --device cuda --model meta-llama/Llama-3.2-3B-Instruct
 
 ...
 
@@ -148,6 +167,32 @@ USM average:  10.934755 s
 Time Reduce: 42.75 %
 ```
 
+### AMD APU Example
+
+Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
+
+```
+> sudo ls
+> LD_PRELOAD=./libforcegttalloc.so python performance.py --device cuda --model Qwen/Qwen3-8B
+
+Benchmarking model: ./models/Qwen3-8B/
+  Running COPY [Warmup] 1/5... 12.3647 s
+  Running COPY [Warmup] 2/5... 12.4575 s
+  Running COPY [Timing] 3/5... 13.3925 s
+  Running COPY [Timing] 4/5... 12.4761 s
+  Running COPY [Timing] 5/5... 12.3232 s
+  Running USM [Warmup] 1/5... 8.2446 s
+  Running USM [Warmup] 2/5... 8.3298 s
+  Running USM [Timing] 3/5... 8.2258 s
+  Running USM [Timing] 4/5... 8.2745 s
+  Running USM [Timing] 5/5... 8.2381 s
+
+Summary for model: ./models/Qwen3-8B/
+Copy average: 12.730602 s
+USM average:  8.246126 s
+Time Reduce: 35.23 %
+```
+
 ### Intel iGPU Example
 
 Example on Intel Arrow Lake (Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
@@ -197,18 +242,6 @@ python chat.py --device <device> --model <model-path-or-id> [--usm]
 Example on NVIDIA Jetson AGX Orin (L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
 
 ```
-> python chat.py --device cuda --model Qwen/Qwen3-8B
-
-Loading model: Qwen/Qwen3-8B (USM=False)
-Loading checkpoint shards: 100%|███████████████| 5/5 [00:15<00:00,  3.02s/it]
-Loaded model in 19.82 seconds.
-
-User: Who are you?
-Assistant:  I am Qwen, a large-scale language model developed by Alibaba Cloud. I was trained on a vast amount of text data and can understand and generate human-like text. My capabilities include answering questions, creating content, and engaging in conversations.
-
-User: exit
-Exiting...
-
 > python chat.py --device cuda --model Qwen/Qwen3-8B --usm
 
 Loading model: Qwen/Qwen3-8B (USM=True)
@@ -217,6 +250,21 @@ Loaded model in 11.75 seconds.
 
 User: Who are you?
 Assistant:  I am Qwen, a large-scale language model developed by Alibaba Cloud. I was trained on a vast amount of text data and can assist with a wide range of tasks, such as answering questions, creating content, and providing information.
+
+User: exit
+Exiting...
+```
+
+### AMD APU Example
+
+Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
+
+```
+> TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1 LD_PRELOAD=./libforcegttalloc.so python chat.py --device cuda --model Qwen/Qwen3-8B --usm
+Loading model: Qwen/Qwen3-8B (USM=True)
+
+User: Who are you
+Assistant:  I am Qwen, a large language model developed by Alibaba Cloud. I can assist with various tasks such as answering questions, creating content, and providing programming help.
 
 User: exit
 Exiting...

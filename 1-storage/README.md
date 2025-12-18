@@ -51,6 +51,24 @@ Size (MB)    | Status   | Max Diff
 1000         | ✅ PASS   | 0.0000e+00
 ```
 
+### AMD APU Example
+
+Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
+
+```
+> python correctness.py --device cuda
+
+Using device: cuda
+
+Size (MB)    | Status   | Max Diff  
+----------------------------------------
+0.001        | ✅ PASS   | 0.0000e+00
+10           | ✅ PASS   | 0.0000e+00
+100          | ✅ PASS   | 0.0000e+00
+500          | ✅ PASS   | 0.0000e+00
+1000         | ✅ PASS   | 0.0000e+00
+```
+
 ### Intel iGPU Example
 
 Example on Intel Arrow Lake (Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
@@ -104,6 +122,26 @@ Size (MB)  | Copy Time (s)   | USM Time (s)    | Time Reduce (%)
 100        | 0.117807        | 0.107668        | 8.61      
 1000       | 1.031310        | 0.826118        | 19.90     
 5000       | 5.208359        | 3.412800        | 34.47
+```
+
+### AMD APU Example
+
+Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
+
+```
+> python performance.py --device cuda
+
+...
+
+============================================================
+                   FINAL RESULTS SUMMARY                    
+============================================================
+Size (MB)  | Copy Time (s)   | USM Time (s)    | Time Reduce (%)
+------------------------------------------------------------
+1          | 0.009638        | 0.001128        | 88.30     
+100        | 0.086465        | 0.050183        | 41.96     
+1000       | 0.793575        | 0.498848        | 37.14     
+4000       | 3.222825        | 2.005964        | 37.76
 ```
 
 ### Intel iGPU Example

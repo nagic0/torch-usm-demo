@@ -34,7 +34,7 @@ sudo sh -c 'echo never > /sys/kernel/mm/transparent_hugepage/enabled'
 
 All tests require custom builds of PyTorch with USM storage support. 
 
-### NVIDIA Jetson (Jetson AGX Orin)
+### NVIDIA Jetson Platforms (Jetson AGX Orin)
 
 You need to install the [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) including CUDA 12.x.
 
@@ -73,7 +73,47 @@ export USE_MEM_EFF_ATTENTION=0
 # export MAX_JOBS=5  # Adjust based on your system memory if compile with flash attention
 
 # Build and install
-python setup.py install
+python setup.py develop
+```
+
+### AMD APU Platforms (Strix Point)
+
+You need to install the [ROCm](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/quick-start.html).
+
+Then, follow these steps to build PyTorch:
+
+```bash
+git clone https://github.com/nagic0/pytorch.git
+cd pytorch
+git switch dev/usm_storage
+git submodule update --init --recursive --progress -j 8
+
+# Create a conda environment
+conda create -n usm-test python=3.11 -y
+conda activate usm-test
+
+pip install -r ./requirements-build.txt
+
+python tools/amd_build/build_amd.py
+
+export BUILD_TEST=0
+export INSTALL_TEST=0
+export PYTORCH_QNNPACK_BUILD_TESTS=0
+export PTHREADPOOL_BUILD_TESTS=0
+export XNNPACK_BUILD_TESTS=0
+export DNNL_BUILD_TESTS=0
+export USE_CUDA=0
+export USE_ROCM=1
+export USE_XCCL=0
+export USE_DISTRIBUTED=0
+export USE_QNNPACK=0
+export USE_PYTORCH_QNNPACK=0
+export USE_XNNPACK=0
+export USE_XPU=0
+export REL_WITH_DEB_INFO=1
+export PYTORCH_ROCM_ARCH="gfx1150"  # Set according to your GPU
+
+python setup.py develop
 ```
 
 ### Intel iGPU Platforms (Arrow Lake)
@@ -112,5 +152,5 @@ export USE_XNNPACK=0
 export REL_WITH_DEB_INFO=1
 export TORCH_XPU_ARCH_LIST="arl-h"
 
-python setup.py install
+python setup.py develop
 ```
