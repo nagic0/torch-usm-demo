@@ -259,12 +259,18 @@ def main():
 
     try:
         results = []
-        
+
         # Run without USM first
+        print("Warming up without USM...")
+        run_benchmark(args.model, args.device, use_usm=False, max_tokens=args.max_tokens)
+        print("Executing benchmark without USM...")
         result_no_usm = run_benchmark(args.model, args.device, use_usm=False, max_tokens=args.max_tokens)
         results.append(result_no_usm)
-        
+
         # Run with USM
+        print("\nWarming up with USM...")
+        run_benchmark(args.model, args.device, use_usm=True, max_tokens=args.max_tokens)
+        print("Executing benchmark with USM...")
         result_with_usm = run_benchmark(args.model, args.device, use_usm=True, max_tokens=args.max_tokens)
         results.append(result_with_usm)
         
