@@ -13,6 +13,7 @@ The tests are intended for systems with custom PyTorch, Safetensors, and Transfo
 - `performance.py` — Runs an automated micro-benchmark for model loading across multiple methods.
 - `performance_worker.py` — Worker script invoked by `performance.py` for a single timed run.
 - `chat.py` — Interactive chat demo to test model inference.
+- `chat_performance.py` — Measures loading and inference latency with and without USM. 
 
 ## Prerequisites
 
@@ -271,3 +272,56 @@ User: exit
 Exiting...
 ```
 
+## Chat Performance Measurement
+
+`chat_performance.py` measures the loading and inference latency of the chat model with and without USM.
+
+Run the chat performance measurement:
+
+```bash
+> sudo ls
+> python chat_performance.py --device <device> --model <model-path-or-id>
+```
+
+### NVIDIA Jetson Example
+
+Example on NVIDIA Jetson AGX Orin (L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
+
+```
+> sudo ls
+> python chat_performance.py --device cuda --model Qwen/Qwen3-8B
+
+```
+
+### AMD APU Example
+
+Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
+
+```
+> sudo ls
+> LD_PRELOAD=./libforcegttalloc.so python chat_performance.py --device cuda --model Qwen/Qwen3-8B
+```
+
+### Intel iGPU Example
+
+Example on Intel Arrow Lake (Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
+
+```
+> sudo ls
+> python chat_performance.py --device xpu --model ./Meta-Llama-3.1-8B-Instruct-Resize
+
+...
+
+============================================================
+SUMMARY COMPARISON
+============================================================
+Metric                    No USM          With USM       
+------------------------------------------------------------
+Load time (s)             12.4229         3.2007         
+Prefill time (s)          0.2706          0.2816         
+Decode time (s)           6.0887          6.4212         
+Total time (s)            6.3594          6.7028         
+Generated tokens          24              24             
+Decode throughput (tok/s) 3.94            3.74           
+============================================================
+```
