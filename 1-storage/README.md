@@ -88,6 +88,25 @@ Size (MB)    | Status   | Max Diff
 4000         | ✅ PASS   | 0.0000e+00
 ```
 
+### Apple Metal Example
+
+Example on Apple M4 Pro (macOS 15.7):
+
+```
+> python correctness.py --device mps
+
+Using device: mps
+
+Size (MB)    | Status   | Max Diff  
+----------------------------------------
+0.001        | ✅ PASS   | 0.0000e+00
+10           | ✅ PASS   | 0.0000e+00
+100          | ✅ PASS   | 0.0000e+00
+500          | ✅ PASS   | 0.0000e+00
+1000         | ✅ PASS   | 0.0000e+00
+4000         | ✅ PASS   | 0.0000e+00
+```
+
 ## Running Performance Benchmark
 
 `performance.py` automates generating test files and running repeated timed trials using `performance_worker.py`. It runs a configurable number of warmup runs and measured loops per size.
@@ -107,6 +126,7 @@ python performance.py --device <device>
 Example results (measured on NVIDIA Jetson AGX Orin, L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
 
 ```
+> sudo ls
 > python performance.py --device cuda
 
 Using device: cuda
@@ -129,6 +149,7 @@ Size (MB)  | Copy Time (s)   | USM Time (s)    | Time Reduce (%)
 Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
 
 ```
+> sudo ls
 > python performance.py --device cuda
 
 ...
@@ -149,6 +170,7 @@ Size (MB)  | Copy Time (s)   | USM Time (s)    | Time Reduce (%)
 Example results (measured on Intel Arrow Lake, Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
 
 ```
+> sudo ls
 > python performance.py --device xpu
 
 Using device: xpu
@@ -164,4 +186,27 @@ Size (MB)  | Copy Time (s)   | USM Time (s)    | Time Reduce (%)
 100        | 0.071528        | 0.040415        | 43.50     
 1000       | 0.592847        | 0.220699        | 62.77     
 4000       | 2.290023        | 0.864745        | 62.24
+```
+
+### Apple Metal Example
+
+Example on Apple M4 Pro (macOS 15.7):
+
+```
+> sudo ls
+> python performance.py --device mps
+
+Using device: mps
+
+...
+
+============================================================
+                   FINAL RESULTS SUMMARY                    
+============================================================
+Size (MB)  | Copy Time (s)   | USM Time (s)    | Time Reduce (%)
+------------------------------------------------------------
+1          | 0.034657        | 0.022242        | 35.82     
+100        | 0.103381        | 0.038576        | 62.69     
+1000       | 0.495429        | 0.222136        | 55.16     
+4000       | 1.857312        | 0.804180        | 56.70 
 ```

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import time
 import threading
 import argparse
@@ -16,23 +17,11 @@ from transformers import (
 )
 from transformers.modeling_utils import set_usm_device
 
+ROOT = Path(__file__).parent.absolute()
+sys.path.insert(0, str(ROOT.parent))
 
-def flush(device):
-    if device.type == "cuda":
-        torch.cuda.empty_cache()
-    elif device.type == "xpu":
-        torch.xpu.empty_cache()
-    else:
-        pass
-    os.system("sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null")
+from common import flush, device_sync
 
-def device_sync(device):
-    if device.type == "cuda":
-        torch.cuda.synchronize()
-    elif device.type == "xpu":
-        torch.xpu.synchronize()
-    else:
-        pass
 
 def load_model(path: str, use_usm: bool, device_map="cuda"):
     flush(torch.device(device_map))
@@ -253,7 +242,7 @@ def run_benchmark(model_path: str, device: str, use_usm: bool, max_tokens: int =
 def main():
     parser = argparse.ArgumentParser(description="Performance benchmark with optional USM")
     parser.add_argument("-m", "--model", required=True, help="Path to pretrained model folder")
-    parser.add_argument("--device", "-d", type=str, default="cuda", help="Device to use (e.g., cuda, xpu)")
+    parser.add_argument("--device", "-d", type=str, required=True, help="Device to use (e.g., cuda, xpu)")
     parser.add_argument("--max-tokens", type=int, default=32, help="Max new tokens to generate")
     args = parser.parse_args()
 

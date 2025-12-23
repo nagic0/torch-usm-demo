@@ -154,3 +154,40 @@ export TORCH_XPU_ARCH_LIST="arl-h"
 
 python setup.py develop
 ```
+
+### Apple Metals Platforms
+
+You need to install the [Xcode](https://developer.apple.com/xcode/features/).
+
+Then, follow these steps to build PyTorch:
+
+```bash
+git clone https://github.com/nagic0/pytorch.git
+cd pytorch
+git switch dev/usm_storage
+git submodule update --init --recursive --progress -j 8
+
+# Create a conda environment
+conda create -n usm-test python=3.11 -y
+conda activate usm-test
+
+pip install -r ./requirements-build.txt
+
+export BUILD_TEST=0
+export INSTALL_TEST=0
+export PYTORCH_QNNPACK_BUILD_TESTS=0
+export PTHREADPOOL_BUILD_TESTS=0
+export XNNPACK_BUILD_TESTS=0
+export DNNL_BUILD_TESTS=0
+export USE_CUDA=0
+export USE_ROCM=0
+export USE_XCCL=0
+export USE_DISTRIBUTED=0
+export USE_QNNPACK=0
+export USE_PYTORCH_QNNPACK=0
+export USE_XNNPACK=0
+export USE_XPU=0
+export REL_WITH_DEB_INFO=1
+
+python setup.py develop
+```

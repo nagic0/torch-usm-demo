@@ -1,21 +1,14 @@
+from pathlib import Path
 import torch
 import os
 import time
 import argparse
 import sys
 
+ROOT = Path(__file__).parent.absolute()
+sys.path.insert(0, str(ROOT.parent))
 
-def flush():
-    torch.cuda.empty_cache()
-    os.system("sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null")
-
-def device_sync(device):
-    if device.type == "cuda":
-        torch.cuda.synchronize()
-    elif device.type == "xpu":
-        torch.xpu.synchronize()
-    else:
-        pass
+from common import flush, device_sync
 
 def run_usm(filename, device):
     file_size = os.path.getsize(filename)
@@ -52,7 +45,7 @@ if __name__ == "__main__":
     torch.ones(1).to(device)
     device_sync(device)
 
-    flush()
+    flush(device)
 
     try:
         if args.method == "copy":

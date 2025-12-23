@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import time
 import argparse
 import sys
@@ -7,6 +8,9 @@ from contextlib import nullcontext
 from transformers import AutoModelForCausalLM
 from transformers.modeling_utils import set_usm_device
 
+ROOT = Path(__file__).parent.parent
+
+sys.path.insert(0, str(ROOT))
 
 def device_sync(device):
     if device.type == "cuda":

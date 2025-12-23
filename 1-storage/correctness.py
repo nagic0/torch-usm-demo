@@ -14,8 +14,9 @@ def get_usm(filename, num_elements, device):
     tensor_gpu = torch.empty(num_elements, dtype=torch.float32, device=device)
     tensor_gpu.set_(storage_gpu)
 
-    loaded_tensor = torch.empty(num_elements, dtype=torch.float32)
-    loaded_tensor.set_(storage)
+    # loaded_tensor = torch.empty(num_elements, dtype=torch.float32)
+    # loaded_tensor.set_(storage)
+    loaded_tensor = tensor_gpu
     
     return loaded_tensor
 
@@ -27,9 +28,10 @@ def get_copy(filename, num_elements, device):
     tensor_gpu = torch.empty(num_elements, dtype=torch.float32, device=device)
     tensor_gpu.set_(storage_gpu)
 
-    loaded_tensor = torch.empty(num_elements, dtype=torch.float32)
-    loaded_tensor.set_(storage)
-    
+    # loaded_tensor = torch.empty(num_elements, dtype=torch.float32)
+    # loaded_tensor.set_(storage)
+    loaded_tensor = tensor_gpu
+
     return loaded_tensor
 
 def test_correctness(size_mb, device):
@@ -79,7 +81,7 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
     print()
     
-    sizes = [0.001, 10, 100, 500, 1000] 
+    sizes = [0.001, 10, 100, 500, 1000, 4000] 
 
     # Print Header
     print(f"{'Size (MB)':<12} | {'Status':<8} | {'Max Diff':<10}")

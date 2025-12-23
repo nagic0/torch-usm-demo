@@ -36,6 +36,7 @@ conda activate <env-name>
 git clone https://github.com/nagic0/safetensors.git
 cd safetensors
 git switch dev/torch_usm
+# git switch dev/torch_usm_mps # For Apple MPS devices
 cd bindings/python
 pip install -e .
 ```
@@ -270,8 +271,3 @@ User: exit
 Exiting...
 ```
 
-### Intel iGPU Example
-
-Due to the [AOT compilation issue or incorrect use by me](https://github.com/intel/torch-xpu-ops/issues/2587) on Intel iGPU platforms, the chat demo may experience significant delays during the first inference call. Subsequent calls should be faster.
-
-*To be continued...*
