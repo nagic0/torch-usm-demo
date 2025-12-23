@@ -111,7 +111,7 @@ Overall PASS: True
 
 **Important:**
 
-- On Intel iGPU platforms before Xe2, there's a max size limit, around 4GB, for a single GPU buffer (See [this issue](https://github.com/intel/compute-runtime/issues/627)). Therefore, for larger models (2B+), consider using the `intel_resize.py` script to **resize the file sizes** of the model weights before running the tests.
+- On Intel iGPU platforms before Xe2, there's a max size limit, around 4GB, for a single GPU buffer ([this issue](https://github.com/intel/compute-runtime/issues/627)). Therefore, for larger models (2B+), consider using the `intel_resize.py` script to **resize the file sizes** of the model weights before running the tests.
 
 Example on Intel Arrow Lake (Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
 
@@ -123,6 +123,21 @@ Example on Intel Arrow Lake (Ubuntu 24.04, Linux 6.16.9, oneAPI 2025.2.0):
 Summary:
 Total compared tensors: 291
 Passed (max_diff==0): 291
+Overall PASS: True
+```
+
+### Apple Metal Example
+
+Example on Apple M4 Pro (macOS 15.7):
+
+```
+> python correctness.py --device mps --model Qwen/Qwen3-8B
+
+...
+
+Summary:
+Total compared tensors: 399
+Passed (max_diff==0): 399
 Overall PASS: True
 ```
 
@@ -229,6 +244,32 @@ USM average:  11.196101 s
 Time Reduce: 70.85 %
 ```
 
+### Apple Metal Example
+
+Example on Apple M4 Pro (macOS 15.7):
+
+```
+> sudo ls
+> python performance.py --device mps --model Qwen/Qwen3-8B
+
+Benchmarking model: Qwen/Qwen3-8B
+  Running COPY [Warmup] 1/5... 7.8868 s
+  Running COPY [Warmup] 2/5... 8.2929 s
+  Running COPY [Timing] 3/5... 8.3855 s
+  Running COPY [Timing] 4/5... 8.6560 s
+  Running COPY [Timing] 5/5... 8.6914 s
+  Running USM [Warmup] 1/5... 2.0805 s
+  Running USM [Warmup] 2/5... 1.9356 s
+  Running USM [Timing] 3/5... 1.7765 s
+  Running USM [Timing] 4/5... 1.7540 s
+  Running USM [Timing] 5/5... 1.7840 s
+
+Summary for model: Qwen/Qwen3-8B
+Copy average: 8.577654 s
+USM average:  1.771506 s
+Time Reduce: 79.35 %
+```
+
 ## Interactive Chat Demo
 
 `chat.py` provides an interactive chat interface to test model inference with and without USM loading.
@@ -289,8 +330,22 @@ Example on NVIDIA Jetson AGX Orin (L4T 35.6.0, Jetpack 5.1.4, CUDA 12.2):
 
 ```
 > sudo ls
-> python chat_performance.py --device cuda --model Qwen/Qwen3-8B
+> python chat_performance.py --device cuda --model Llama/Llama-3.2-3B-Instruct
 
+...
+
+============================================================
+SUMMARY COMPARISON
+============================================================
+Metric                    No USM          With USM       
+------------------------------------------------------------
+Load time (s)             8.4974          4.5436         
+Prefill time (s)          0.1088          0.1065         
+Decode time (s)           2.6240          2.5765         
+Total time (s)            2.7328          2.6831         
+Generated tokens          33              33             
+Decode throughput (tok/s) 12.58           12.81          
+============================================================
 ```
 
 ### AMD APU Example
@@ -300,6 +355,19 @@ Example on AMD Strix Point (Ubuntu 24.04, Linux 6.14.0, ROCm 7.0.2):
 ```
 > sudo ls
 > LD_PRELOAD=./libforcegttalloc.so python chat_performance.py --device cuda --model Qwen/Qwen3-8B
+
+============================================================
+SUMMARY COMPARISON
+============================================================
+Metric                    No USM          With USM       
+------------------------------------------------------------
+Load time (s)             16.8431         8.1556         
+Prefill time (s)          0.2908          0.2667         
+Decode time (s)           6.7902          7.9225         
+Total time (s)            7.0810          8.1892         
+Generated tokens          32              32             
+Decode throughput (tok/s) 4.71            4.04           
+============================================================
 ```
 
 ### Intel iGPU Example
@@ -323,5 +391,34 @@ Decode time (s)           6.0887          6.4212
 Total time (s)            6.3594          6.7028         
 Generated tokens          24              24             
 Decode throughput (tok/s) 3.94            3.74           
+============================================================
+```
+
+### Apple Metal Example
+
+**Important:**
+
+On Apple MPS devices, USM allocation does not support huge pages, which may lead to suboptimal performance compared to the default GPU allocator. 
+
+Example on Apple M4 Pro (macOS 15.7):
+
+```
+> sudo ls
+> python chat_performance.py --device mps --model Qwen/Qwen3-8B
+
+.../transformers/src/transformers/modeling_utils.py:749: UserWarning: USM: macOS does not support allocating huge pages. Performance may be suboptimal compared to the default GPU allocator. (Triggered internally at .../pytorch/aten/src/ATen/UsmAllocator.cpp:85.)
+  file_pointer = safe_open(shard_file, framework="pt", usm_device=_usm_device)
+
+============================================================
+SUMMARY COMPARISON
+============================================================
+Metric                    No USM          With USM       
+------------------------------------------------------------
+Load time (s)             8.4910          5.3629         
+Prefill time (s)          0.1817          0.6470         
+Decode time (s)           2.3194          3.0272         
+Total time (s)            2.5011          3.6743         
+Generated tokens          32              32             
+Decode throughput (tok/s) 13.80           10.57          
 ============================================================
 ```
