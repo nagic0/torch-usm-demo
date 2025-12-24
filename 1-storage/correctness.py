@@ -24,6 +24,10 @@ def get_copy(filename, num_elements, device):
     file_size = os.path.getsize(filename)
     storage = torch.UntypedStorage.from_file(filename, shared=False, nbytes=file_size)
     
+    if device.type == 'mps':
+        tensor = torch.empty(num_elements, dtype=torch.float32)
+        tensor.set_(storage)
+        return tensor.to(device=device)
     storage_gpu = storage.to(device=device)
     tensor_gpu = torch.empty(num_elements, dtype=torch.float32, device=device)
     tensor_gpu.set_(storage_gpu)

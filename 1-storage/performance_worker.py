@@ -26,7 +26,12 @@ def run_copy(filename, device):
     t0 = time.time()
     storage = torch.UntypedStorage.from_file(filename, shared=False, nbytes=file_size)
     load_end = time.time()
-    storage_gpu = storage.to(device=device)
+    if device.type == 'mps':
+        tensor = torch.empty(storage.size(), dtype=torch.float32)
+        tensor.set_(storage)
+        storage_gpu = tensor.to(device=device)
+    else:
+        storage_gpu = storage.to(device=device)
     device_sync(device)
     t_end = time.time()
     
